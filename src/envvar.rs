@@ -114,6 +114,18 @@ impl Vergen {
             build_info.insert(VergenKey::SemverLightweight, semver);
         }
 
+        if flags.contains(ConstantsFlags::SEMVER_LATEST_TAG) {
+            let tag = run_command(Command::new("git").args(&["rev-list", "--tags", "--max-count=1"]));
+            let describe = run_command(Command::new("git").args(&["describe", "--tags", &tag]));
+
+            let semver = if describe.is_empty() {
+                env::var("CARGO_PKG_VERSION")?
+            } else {
+                describe
+            };
+            build_info.insert(VergenKey::SemverLatestTag, semver);
+        }
+
         vergen.build_info = build_info;
 
         if flags.contains(ConstantsFlags::REBUILD_ON_HEAD_CHANGE) {
@@ -211,6 +223,8 @@ pub enum VergenKey {
     /// The semver version from the last git tag, including lightweight.
     /// (VERGEN_SEMVER_LIGHTWEIGHT)
     SemverLightweight,
+    /// The semver version from the latest git tag.
+    SemverLatestTag,
 }
 
 impl VergenKey {
@@ -225,6 +239,7 @@ impl VergenKey {
             VergenKey::TargetTriple => TARGET_TRIPLE_COMMENT,
             VergenKey::Semver => SEMVER_COMMENT,
             VergenKey::SemverLightweight => SEMVER_TAGS_COMMENT,
+            VergenKey::SemverLatestTag => SEMVER_LATEST_TAG_COMMENT,
         }
     }
 
@@ -239,6 +254,7 @@ impl VergenKey {
             VergenKey::TargetTriple => TARGET_TRIPLE_NAME,
             VergenKey::Semver => SEMVER_NAME,
             VergenKey::SemverLightweight => SEMVER_TAGS_NAME,
+            VergenKey::SemverLatestTag => SEMVER_LATEST_TAG_NAME,
         }
     }
 }
